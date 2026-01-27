@@ -1,0 +1,32 @@
+{
+  "model_name": "sentence-transformers/all-MiniLM-L6-v2",
+  "speedup_factor": 2.24,
+  "latency_reduction_percent": 55.3,
+  "throughput_improvement_percent": 123.6,
+  "pytorch": {
+    "model_name": "sentence-transformers/all-MiniLM-L6-v2",
+    "backend": "pytorch",
+    "num_iterations": 50,
+    "total_time_sec": 0.306,
+    "avg_latency_ms": 6.127,
+    "min_latency_ms": 5.338,
+    "max_latency_ms": 7.579,
+    "p50_latency_ms": 6.021,
+    "p95_latency_ms": 7.456,
+    "p99_latency_ms": 7.579,
+    "throughput_per_sec": 163.14
+  },
+  "openvino": {
+    "model_name": "sentence-transformers/all-MiniLM-L6-v2",
+    "backend": "openvino",
+    "num_iterations": 50,
+    "total_time_sec": 0.137,
+    "avg_latency_ms": 2.739,
+    "min_latency_ms": 2.041,
+    "max_latency_ms": 4.628,
+    "p50_latency_ms": 2.597,
+    "p95_latency_ms": 4.082,
+    "p99_latency_ms": 4.628,
+    "throughput_per_sec": 364.84
+  }
+}
