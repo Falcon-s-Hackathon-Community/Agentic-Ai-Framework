@@ -1,0 +1,32 @@
+{
+  "model_name": "distilbert-base-uncased-finetuned-sst-2-english",
+  "speedup_factor": 2.14,
+  "latency_reduction_percent": 53.3,
+  "throughput_improvement_percent": 113.9,
+  "pytorch": {
+    "model_name": "distilbert-base-uncased-finetuned-sst-2-english",
+    "backend": "pytorch",
+    "num_iterations": 50,
+    "total_time_sec": 1.067,
+    "avg_latency_ms": 21.34,
+    "min_latency_ms": 15.886,
+    "max_latency_ms": 26.723,
+    "p50_latency_ms": 20.939,
+    "p95_latency_ms": 25.123,
+    "p99_latency_ms": 26.723,
+    "throughput_per_sec": 46.85
+  },
+  "openvino": {
+    "model_name": "distilbert-base-uncased-finetuned-sst-2-english",
+    "backend": "openvino",
+    "num_iterations": 50,
+    "total_time_sec": 0.499,
+    "avg_latency_ms": 9.976,
+    "min_latency_ms": 6.974,
+    "max_latency_ms": 38.25,
+    "p50_latency_ms": 8.794,
+    "p95_latency_ms": 16.808,
+    "p99_latency_ms": 38.25,
+    "throughput_per_sec": 100.21
+  }
+}

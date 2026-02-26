@@ -1166,5 +1166,151 @@
       "aggregate_result": "{'sum': 30, 'count': 5}"
     },
     "errors": []
+  },
+  "a604456f-4b1d-42b0-912e-9a1d635ff680": {
+    "workflow_id": "a604456f-4b1d-42b0-912e-9a1d635ff680",
+    "name": "sequential_data_pipeline",
+    "status": "completed",
+    "created_at": "2026-02-26T08:21:59.694222",
+    "started_at": "2026-02-26T08:21:59.697758",
+    "completed_at": "2026-02-26T08:21:59.719057",
+    "task_states": {
+      "fetch": {
+        "status": "completed",
+        "result": "{'data': [1, 2, 3, 4, 5], 'timestamp': '08:21:59'}",
+        "error": null,
+        "updated_at": "2026-02-26T08:21:59.704334"
+      },
+      "transform": {
+        "status": "completed",
+        "result": "{'transformed': [2, 4, 6, 8, 10], 'original_count': 5}",
+        "error": null,
+        "updated_at": "2026-02-26T08:21:59.710439"
+      },
+      "aggregate": {
+        "status": "completed",
+        "result": "{'sum': 30, 'count': 5}",
+        "error": null,
+        "updated_at": "2026-02-26T08:21:59.716249"
+      }
+    },
+    "context": {
+      "source": "test",
+      "fetch_result": "{'data': [1, 2, 3, 4, 5], 'timestamp': '08:21:59'}",
+      "transform_result": "{'transformed': [2, 4, 6, 8, 10], 'original_count': 5}",
+      "aggregate_result": "{'sum': 30, 'count': 5}"
+    },
+    "errors": []
+  },
+  "65e28917-23da-46ae-b205-8c18cca5f1e3": {
+    "workflow_id": "65e28917-23da-46ae-b205-8c18cca5f1e3",
+    "name": "parallel_processing",
+    "status": "completed",
+    "created_at": "2026-02-26T08:21:59.724861",
+    "started_at": "2026-02-26T08:21:59.728221",
+    "completed_at": "2026-02-26T08:21:59.756674",
+    "task_states": {
+      "start": {
+        "status": "completed",
+        "result": "{'initialized': True, 'context': 'parallel_test'}",
+        "error": null,
+        "updated_at": "2026-02-26T08:21:59.734336"
+      },
+      "branch_a": {
+        "status": "completed",
+        "result": "{'branch': 'A', 'result': 'Processed by branch A', 'value': 100}",
+        "error": null,
+        "updated_at": "2026-02-26T08:21:59.743633"
+      },
+      "branch_b": {
+        "status": "completed",
+        "result": "{'branch': 'B', 'result': 'Processed by branch B', 'value': 200}",
+        "error": null,
+        "updated_at": "2026-02-26T08:21:59.746566"
+      },
+      "merge": {
+        "status": "completed",
+        "result": "{'merged': True, 'branch_a': {'branch': 'A', 'result': 'Processed by branch A', 'value': 100}, 'branch_b': {'branch': 'B', 'result': 'Processed by branch B', 'value': 200}, 'total': 300}",
+        "error": null,
+        "updated_at": "2026-02-26T08:21:59.752629"
+      }
+    },
+    "context": {
+      "input": "parallel_test",
+      "start_result": "{'initialized': True, 'context': 'parallel_test'}",
+      "branch_a_result": "{'branch': 'A', 'result': 'Processed by branch A', 'value': 100}",
+      "branch_b_result": "{'branch': 'B', 'result': 'Processed by branch B', 'value': 200}",
+      "merge_result": "{'merged': True, 'branch_a': {'branch': 'A', 'result': 'Processed by branch A', 'value': 100}, 'branch_b': {'branch': 'B', 'result': 'Processed by branch B', 'value': 200}, 'total': 300}"
+    },
+    "errors": []
+  },
+  "20f2ff2f-2f69-442b-9765-3fb095ee3d18": {
+    "workflow_id": "20f2ff2f-2f69-442b-9765-3fb095ee3d18",
+    "name": "tool_based_pipeline",
+    "status": "completed",
+    "created_at": "2026-02-26T08:21:59.762002",
+    "started_at": "2026-02-26T08:21:59.765118",
+    "completed_at": "2026-02-26T08:21:59.991054",
+    "task_states": {
+      "fetch": {
+        "status": "completed",
+        "result": "{'source': 'database', 'records': [{'id': 1, 'name': 'Record A', 'value': 100}, {'id': 2, 'name': 'Record B', 'value': 200}, {'id': 3, 'name': 'Record C', 'value': 300}], 'fetched_at': '2026-02-26 08:21:59'}",
+        "error": null,
+        "updated_at": "2026-02-26T08:21:59.872193"
+      },
+      "transform": {
+        "status": "completed",
+        "result": "[{'id': 1, 'name': 'Record A', 'value': 100, 'normalized_value': 1.0}, {'id': 2, 'name': 'Record B', 'value': 200, 'normalized_value': 2.0}, {'id': 3, 'name': 'Record C', 'value': 300, 'normalized_value': 3.0}]",
+        "error": null,
+        "updated_at": "2026-02-26T08:21:59.930175"
+      },
+      "aggregate": {
+        "status": "completed",
+        "result": "{'count': 3, 'sum': 600, 'avg': 200.0, 'min': 100, 'max': 300}",
+        "error": null,
+        "updated_at": "2026-02-26T08:21:59.987641"
+      }
+    },
+    "context": {
+      "fetch_result": "{'source': 'database', 'records': [{'id': 1, 'name': 'Record A', 'value': 100}, {'id': 2, 'name': 'Record B', 'value': 200}, {'id': 3, 'name': 'Record C', 'value': 300}], 'fetched_at': '2026-02-26 08:21:59'}",
+      "transform_result": "[{'id': 1, 'name': 'Record A', 'value': 100, 'normalized_value': 1.0}, {'id': 2, 'name': 'Record B', 'value': 200, 'normalized_value': 2.0}, {'id': 3, 'name': 'Record C', 'value': 300, 'normalized_value': 3.0}]",
+      "aggregate_result": "{'count': 3, 'sum': 600, 'avg': 200.0, 'min': 100, 'max': 300}"
+    },
+    "errors": []
+  },
+  "846986e6-c3d8-4b1e-bc99-3262a2714735": {
+    "workflow_id": "846986e6-c3d8-4b1e-bc99-3262a2714735",
+    "name": "sequential_data_pipeline",
+    "status": "completed",
+    "created_at": "2026-02-26T08:21:59.996358",
+    "started_at": "2026-02-26T08:21:59.999709",
+    "completed_at": "2026-02-26T08:22:00.025440",
+    "task_states": {
+      "fetch": {
+        "status": "completed",
+        "result": "{'data': [1, 2, 3, 4, 5], 'timestamp': '08:22:00'}",
+        "error": null,
+        "updated_at": "2026-02-26T08:22:00.007577"
+      },
+      "transform": {
+        "status": "completed",
+        "result": "{'transformed': [2, 4, 6, 8, 10], 'original_count': 5}",
+        "error": null,
+        "updated_at": "2026-02-26T08:22:00.014784"
+      },
+      "aggregate": {
+        "status": "completed",
+        "result": "{'sum': 30, 'count': 5}",
+        "error": null,
+        "updated_at": "2026-02-26T08:22:00.022000"
+      }
+    },
+    "context": {
+      "test": "persistence",
+      "fetch_result": "{'data': [1, 2, 3, 4, 5], 'timestamp': '08:22:00'}",
+      "transform_result": "{'transformed': [2, 4, 6, 8, 10], 'original_count': 5}",
+      "aggregate_result": "{'sum': 30, 'count': 5}"
+    },
+    "errors": []
   }
 }

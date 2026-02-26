@@ -12,7 +12,7 @@ optimum[openvino,nncf]
 transformers
 torch
 scipy
-
+openai
 # PDF Processing
 PyMuPDF>=1.23.0
 
