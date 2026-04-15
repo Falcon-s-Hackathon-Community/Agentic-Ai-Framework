@@ -81,6 +81,9 @@ $env:PYTHONPATH = (Get-Location).Path
 # Windows CMD:
 set PYTHONPATH=%cd%
 
+# Windows Git Bash (run this too, to fix emoji display):
+export PYTHONUTF8=1
+
 # Step 2: Run the demos
 python examples/agents_demo.py       # Reference Agents (Research + Data Processing)
 python examples/tools_demo.py        # Tool System with Schema Validation
