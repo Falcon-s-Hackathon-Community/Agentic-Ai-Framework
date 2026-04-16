@@ -380,3 +380,12 @@ MIT License - See [LICENSE](LICENSE) for details.
 *No forbidden frameworks. Pure Python. Intel® Optimized.*
 
 </div>
+## Windows Users (Important Fix)
+
+If you face emoji or encoding errors while running demos, set:
+
+set PYTHONUTF8=1
+
+OR in Git Bash:
+
+export PYTHONUTF8=1
