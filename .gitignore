@@ -15,3 +15,4 @@ output/
 *.tmp
 *.swp
 coverage
+sampleagents/traffic_config.json
