@@ -420,12 +420,12 @@ def run_setup():
         "destination":           destination,
         "departure_time":        departure,
         "notify_minutes_before": notify
-    })
-
+       })
+ 
     print(f"\n✅ All set! The agent will alert you at "
           f"{_calc_alert_time(departure, notify)} every day.")
-    print("   Run with:  python traffic_agent.py --run\n")
-
+    print("   Run with:  python sampleagents/traffic_agent.py --run\n")
+ 
 
 def _calc_alert_time(departure_time: str, notify_minutes: int) -> str:
     """Calculate what time the alert will fire."""
@@ -522,9 +522,9 @@ def main():
 🚗  Daily Traffic Alert Agent
 ==============================
 Commands:
-  python traffic_agent.py --setup    Set up your home, destination & time (run once)
-  python traffic_agent.py --run      Start daily scheduler (leave running)
-  python traffic_agent.py --check    One-time traffic check right now
+python sampleagents/traffic_agent.py --setup    Set up your preferences
+python sampleagents/traffic_agent.py --run      Start daily scheduler
+python sampleagents/traffic_agent.py --check    One-time traffic check
 
 Environment variable:
   GOOGLE_MAPS_API_KEY=your_key_here
@@ -534,7 +534,7 @@ Enable: Distance Matrix API
         """)
         return
 
-    api_key = os.environ.get("GOOGLE_MAPS_API_KEY")
+    api_key = os.environ.get("GOOGLE_MAPS_API_KEY", "demo")
 
     if "--setup" in args:
         run_setup()
