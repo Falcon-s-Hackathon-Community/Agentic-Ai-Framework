@@ -16,7 +16,7 @@ from enum import Enum
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 
-from .task import Task, TaskStatus, TaskResult, FunctionTask, LLMTask, ToolTask
+from .task import Task, TaskStatus, TaskResult, FunctionTask, LLMTask, ToolTask, ConditionalTask
 from .tools import ToolRegistry, tool_registry
 from .memory import MemoryStore, get_memory_store, FileBackend
 
@@ -54,6 +54,16 @@ class WorkflowState:
             "started_at": self.started_at.isoformat() if self.started_at else None,
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "task_states": self.task_states,
+            "context": self.context,
+            "errors": self.errors
+        }
+    
+    def to_summary_dict(self) -> Dict[str, Any]:
+        """Returns a stringified/truncated version of the state for logging/UI."""
+        return {
+            "workflow_id": self.workflow_id,
+            "name": self.name,
+            "status": self.status.value,
             "context": {k: str(v)[:500] for k, v in self.context.items()},
             "errors": self.errors
         }
@@ -148,7 +158,7 @@ class StateStore:
             if state:
                 state.task_states[task_name] = {
                     "status": status,
-                    "result": str(result)[:1000] if result else None,
+                    "result": result,
                     "error": error,
                     "updated_at": datetime.now().isoformat()
                 }
@@ -194,7 +204,7 @@ class FlowParser:
     """
     
     def __init__(self, tool_registry: Optional[ToolRegistry] = None):
-        self.tools = tool_registry or tool_registry
+        self.tools = tool_registry or ToolRegistry.get_instance()
         self._function_registry: Dict[str, Callable] = {}
     
     def register_function(self, name: str, func: Callable) -> None:
@@ -323,6 +333,24 @@ class FlowParser:
                 retry_delay=retry_delay
             )
         
+        elif task_def.type == "conditional":
+            condition_name = task_def.config.get("condition")
+            if not condition_name:
+                raise ValueError(f"Conditional task '{task_def.name}' must specify a 'condition' function")
+                
+            condition_func = self._function_registry.get(condition_name)
+            if not condition_func:
+                raise ValueError(f"Condition function '{condition_name}' not found for task '{task_def.name}'")
+                
+            return ConditionalTask(
+                name=task_def.name,
+                condition=condition_func,
+                true_task=task_def.config.get("true_task"),
+                false_task=task_def.config.get("false_task"),
+                max_retries=max_retries,
+                retry_delay=retry_delay
+            )
+        
         else:
             raise ValueError(f"Unknown task type: {task_def.type}")
 
@@ -399,20 +427,31 @@ class Orchestrator:
         Returns:
             Final WorkflowState
         """
+        # Ensure workflow_id is set
         workflow_id = workflow_id or str(uuid.uuid4())
         context = context or {}
         
-        # Initialize workflow state
-        state = WorkflowState(
-            workflow_id=workflow_id,
-            name=flow_def["name"],
-            status=WorkflowStatus.PENDING,
-            created_at=datetime.now(),
-            context=context.copy()
-        )
-        
-        self.state_store.save_workflow_state(state)
-        logger.info(f"Starting workflow '{flow_def['name']}' (ID: {workflow_id})")
+        # Initialize or Load workflow state
+        state = self.state_store.get_workflow_state(workflow_id)
+        if not state:
+            state = WorkflowState(
+                workflow_id=workflow_id,
+                name=flow_def["name"],
+                status=WorkflowStatus.PENDING,
+                created_at=datetime.now(),
+                context=context.copy()
+            )
+            self.state_store.save_workflow_state(state)
+            logger.info(f"Starting workflow '{flow_def['name']}' (ID: {workflow_id})")
+        else:
+            logger.info(f"Resuming workflow '{flow_def['name']}' (ID: {workflow_id}) from existing state")
+            # Clear previous errors and reset status for the new attempt
+            state.errors = []
+            state.status = WorkflowStatus.RUNNING
+            state.completed_at = None
+            if context:
+                state.context.update(context)
+            self.state_store.save_workflow_state(state)
         
         try:
             # Create executable tasks
@@ -472,7 +511,7 @@ class Orchestrator:
         flow_def = self.load_flow(yaml_source)
         return self.execute(flow_def, context, **kwargs)
     
-    def resume(self, workflow_id: str) -> Optional[WorkflowState]:
+    def resume(self, workflow_id: str, yaml_source: Optional[Union[str, Path]] = None) -> Optional[WorkflowState]:
         """
         Resume a paused or failed workflow.
         
@@ -492,8 +531,27 @@ class Orchestrator:
             return state
         
         logger.info(f"Resuming workflow {workflow_id}")
-        # TODO: Implement resume logic based on task_states
-        return state
+        
+        # Determine the flow definition
+        flow_def = None
+        if yaml_source:
+            flow_def = self.load_flow(yaml_source)
+        
+        if not flow_def:
+            # Try to reconstruct tasks or find def? 
+            # For now, require yaml_source for resume if not in memory
+            logger.error("YAML source required to resume workflow (task definitions not in state)")
+            return state
+
+        # Merge context from state
+        current_context = state.context.copy()
+        
+        # Reset errors for the new run
+        state.errors = []
+        state.status = WorkflowStatus.RUNNING
+        self.state_store.save_workflow_state(state)
+        
+        return self.execute(flow_def, current_context, workflow_id=workflow_id)
     
     def _topological_sort(self, tasks: Dict[str, Task]) -> List[str]:
         """
@@ -535,7 +593,15 @@ class Orchestrator:
     ) -> WorkflowState:
         """Execute tasks sequentially in topological order."""
         # Track actual results (not stringified versions)
-        actual_results: Dict[str, Any] = {}
+        actual_results: Dict[str, Any] = {
+            name: s.get("result") for name, s in state.task_states.items()
+            if s.get("status") == "completed" and "result" in s
+        }
+        
+        # Ensure context is updated with existing results
+        for name, result in actual_results.items():
+            state.context[f"{name}_result"] = result
+            context[f"{name}_result"] = result
         
         for task_name in execution_order:
             task = tasks[task_name]
@@ -546,6 +612,17 @@ class Orchestrator:
                 if dep in actual_results:
                     task_context[f"{dep}_result"] = actual_results[dep]
             
+            # Skip if already completed (for resume)
+            if state.task_states.get(task_name, {}).get("status") == "completed":
+                # Ensure result is in context for downstream tasks
+                result_data = state.task_states[task_name].get("result")
+                if result_data is not None:
+                    actual_results[task_name] = result_data
+                    state.context[f"{task_name}_result"] = result_data
+                    context[f"{task_name}_result"] = result_data
+                logger.info(f"Skipping already completed task: {task_name}")
+                continue
+
             # Update state: task starting
             self.state_store.update_task_state(
                 state.workflow_id, task_name, "running"
@@ -566,6 +643,34 @@ class Orchestrator:
                 
                 # Store in memory
                 self.memory.store_result(task_name, result.output, state.workflow_id)
+
+                # Special handling for ConditionalTask: skip the unselected branch
+                if task.task_type == "conditional" and isinstance(result.output, dict):
+                    next_task = result.output.get("next_task")
+                    true_task = getattr(task, "true_task", None)
+                    false_task = getattr(task, "false_task", None)
+                    
+                    # Determine which task to skip
+                    to_skip = None
+                    if next_task == true_task:
+                        to_skip = false_task
+                    elif next_task == false_task:
+                        to_skip = true_task
+                    
+                    if to_skip and to_skip in tasks:
+                        logger.info(f"Condition evaluated to {result.output.get('condition_result')}, skipping branch: {to_skip}")
+                        # Propagate skip
+                        skip_queue = [to_skip]
+                        while skip_queue:
+                            s_name = skip_queue.pop(0)
+                            if s_name not in actual_results: # Don't skip if already run (shouldn't happen in DAG)
+                                self.state_store.update_task_state(
+                                    state.workflow_id, s_name, "skipped",
+                                    error=f"Skipped by conditional task '{task_name}'"
+                                )
+                                execution_order = [t for t in execution_order if t != s_name]
+                                if s_name in tasks:
+                                    skip_queue.extend(tasks[s_name].dependents)
             else:
                 self.state_store.update_task_state(
                     state.workflow_id, task_name, "failed",
@@ -586,10 +691,23 @@ class Orchestrator:
         context: Dict[str, Any]
     ) -> WorkflowState:
         """Execute tasks in parallel where dependencies allow."""
-        completed: Set[str] = set()
+        # Initialize from existing state (for resume)
+        completed: Set[str] = {
+            name for name, s in state.task_states.items() 
+            if s.get("status") == "completed"
+        }
+        # failed set should track failures IN THE CURRENT RUN ONLY.
         failed: Set[str] = set()
         # Track actual results (not stringified versions)
-        actual_results: Dict[str, Any] = {}
+        actual_results: Dict[str, Any] = {
+            name: s.get("result") for name, s in state.task_states.items()
+            if s.get("status") == "completed" and "result" in s
+        }
+        
+        # Ensure context is updated with existing results
+        for name, result in actual_results.items():
+            state.context[f"{name}_result"] = result
+            context[f"{name}_result"] = result
         
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             while len(completed) + len(failed) < len(tasks):
@@ -680,6 +798,33 @@ class Orchestrator:
                                     )
                                     if skip_name in tasks:
                                         skip_queue.extend(tasks[skip_name].dependents)
+                        
+                        # Special handling for ConditionalTask: skip the unselected branch
+                        if task.task_type == "conditional" and isinstance(result.output, dict):
+                            next_task = result.output.get("next_task")
+                            true_task = getattr(task, "true_task", None)
+                            false_task = getattr(task, "false_task", None)
+                            
+                            to_skip = None
+                            if next_task == true_task:
+                                to_skip = false_task
+                            elif next_task == false_task:
+                                to_skip = true_task
+                            
+                            if to_skip and to_skip in tasks and to_skip not in completed and to_skip not in failed:
+                                logger.info(f"Condition evaluated to {result.output.get('condition_result')}, skipping branch: {to_skip}")
+                                failed.add(to_skip) # Using failed as a way to mark skipped in the while loop condition
+                                skip_queue = [to_skip]
+                                while skip_queue:
+                                    s_name = skip_queue.pop(0)
+                                    if s_name not in completed:
+                                        failed.add(s_name)
+                                        self.state_store.update_task_state(
+                                            state.workflow_id, s_name, "skipped",
+                                            error=f"Skipped by conditional task '{task_name}'"
+                                        )
+                                        if s_name in tasks:
+                                            skip_queue.extend(tasks[s_name].dependents)
                     
                     except Exception as e:
                         self.state_store.update_task_state(

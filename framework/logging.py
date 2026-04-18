@@ -516,6 +516,19 @@ class FlowLogger:
         """Reset singleton (for testing)."""
         cls._instance = None
     
+    def _safe_print(self, message: str) -> None:
+        """Print to console handling potential encoding errors."""
+        try:
+            print(message)
+        except UnicodeEncodeError:
+            # Fallback for terminals that don't support certain characters (like emojis)
+            try:
+                # Try to print after encoding to ascii with replacements
+                print(message.encode('ascii', errors='replace').decode('ascii'))
+            except Exception:
+                # Absolute fallback
+                pass
+
     def _write_log(self, entry: Dict[str, Any], flow_name: Optional[str] = None, flow_id: Optional[str] = None) -> None:
         """Write log entry to file."""
         with self._lock:
@@ -580,7 +593,7 @@ class FlowLogger:
         self._metrics.increment("flow_started", tags={"flow": flow_name})
         
         # Console output
-        print(f"🚀 [{datetime.now().strftime('%H:%M:%S')}] FLOW_START: {flow_name} ({flow_id[:8]}...) - {task_count} tasks")
+        self._safe_print(f"🚀 [{datetime.now().strftime('%H:%M:%S')}] FLOW_START: {flow_name} ({flow_id[:8]}...) - {task_count} tasks")
     
     def flow_end(
         self,
@@ -612,7 +625,7 @@ class FlowLogger:
         
         # Console output
         icon = "✅" if status == "completed" else "❌"
-        print(f"{icon} [{datetime.now().strftime('%H:%M:%S')}] FLOW_END: {flow_name} - {status} in {duration:.2f}s ({tasks_completed} completed, {tasks_failed} failed)")
+        self._safe_print(f"{icon} [{datetime.now().strftime('%H:%M:%S')}] FLOW_END: {flow_name} - {status} in {duration:.2f}s ({tasks_completed} completed, {tasks_failed} failed)")
     
     # -------------------------------------------------------------------------
     # Task Events
@@ -640,7 +653,7 @@ class FlowLogger:
         self._write_log(entry, flow_name, flow_id)
         self._metrics.increment("task_started", tags={"task": task_name, "type": task_type})
         
-        print(f"  ▶ [{datetime.now().strftime('%H:%M:%S')}] TASK_START: {task_name} ({task_type})")
+        self._safe_print(f"  ▶ [{datetime.now().strftime('%H:%M:%S')}] TASK_START: {task_name} ({task_type})")
     
     def task_end(
         self,
@@ -674,7 +687,7 @@ class FlowLogger:
         
         icon = "  ✓" if status == "completed" else "  ✗"
         retry_info = f" (retries: {retries_used})" if retries_used > 0 else ""
-        print(f"{icon} [{datetime.now().strftime('%H:%M:%S')}] TASK_END: {task_name} - {status} in {duration:.3f}s{retry_info}")
+        self._safe_print(f"{icon} [{datetime.now().strftime('%H:%M:%S')}] TASK_END: {task_name} - {status} in {duration:.3f}s{retry_info}")
     
     # -------------------------------------------------------------------------
     # Retry Events
@@ -706,8 +719,8 @@ class FlowLogger:
         self._write_log(entry, flow_name, flow_id)
         self._metrics.increment("task_retries", tags={"task": task_name})
         
-        print(f"  ⟳ [{datetime.now().strftime('%H:%M:%S')}] TASK_RETRY: {task_name} - attempt {attempt}/{max_attempts}, waiting {delay:.1f}s")
-        print(f"      Error: {error[:100]}{'...' if len(error) > 100 else ''}")
+        self._safe_print(f"  ⟳ [{datetime.now().strftime('%H:%M:%S')}] TASK_RETRY: {task_name} - attempt {attempt}/{max_attempts}, waiting {delay:.1f}s")
+        self._safe_print(f"      Error: {error[:100]}{'...' if len(error) > 100 else ''}")
     
     # -------------------------------------------------------------------------
     # Error Events
@@ -738,7 +751,7 @@ class FlowLogger:
         self._write_log(entry, flow_name, flow_id)
         self._metrics.increment("errors", tags={"type": error_type})
         
-        print(f"  ❌ [{datetime.now().strftime('%H:%M:%S')}] ERROR: {message}")
+        self._safe_print(f"  ❌ [{datetime.now().strftime('%H:%M:%S')}] ERROR: {message}")
     
     # -------------------------------------------------------------------------
     # Query Methods

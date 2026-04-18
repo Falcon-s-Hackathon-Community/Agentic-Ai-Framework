@@ -212,6 +212,22 @@ class OpenVINOTextClassifier:
             _ = self.classify(text)
         
         # Benchmark
+        if not test_texts:
+            logger.warning("No test texts provided for benchmark")
+            return BenchmarkResult(
+                model_name=self.model_name,
+                backend="openvino" if self.use_openvino else "pytorch",
+                num_iterations=0,
+                total_time=0,
+                avg_latency_ms=0,
+                min_latency_ms=0,
+                max_latency_ms=0,
+                p50_latency_ms=0,
+                p95_latency_ms=0,
+                p99_latency_ms=0,
+                throughput_per_sec=0
+            )
+
         logger.info(f"Running {num_iterations} benchmark iterations...")
         latencies = []
         
@@ -384,6 +400,22 @@ class OpenVINOEmbedding:
             _ = self.embed(text)
         
         # Benchmark
+        if not test_texts:
+            logger.warning("No test texts provided for benchmark")
+            return BenchmarkResult(
+                model_name=self.model_name,
+                backend="openvino" if self.use_openvino else "pytorch",
+                num_iterations=0,
+                total_time=0,
+                avg_latency_ms=0,
+                min_latency_ms=0,
+                max_latency_ms=0,
+                p50_latency_ms=0,
+                p95_latency_ms=0,
+                p99_latency_ms=0,
+                throughput_per_sec=0
+            )
+
         latencies = []
         
         start_total = time.perf_counter()

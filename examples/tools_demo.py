@@ -125,9 +125,9 @@ try:
         "path": "valid.txt",
         "content": "Valid content"
     })
-    print(f"✓ Valid input accepted")
+    print(f"[OK] Valid input accepted")
 except Exception as e:
-    print(f"✗ Unexpected error: {e}")
+    print(f"[ERROR] Unexpected error: {e}")
 
 # Test missing required field
 print("\nTesting missing required field...")
@@ -135,9 +135,9 @@ try:
     result = file_writer.execute({
         "content": "Missing path!"  # 'path' is required
     })
-    print(f"✗ Should have raised error")
+    print(f"[ERROR] Should have raised error")
 except ValueError as e:
-    print(f"✓ Correctly caught: {e}")
+    print(f"[OK] Correctly caught: {e}")
 
 # Test invalid enum value
 print("\nTesting invalid enum value...")
@@ -147,9 +147,9 @@ try:
         "content": "Test",
         "mode": "invalid_mode"  # Must be "write" or "append"
     })
-    print(f"✗ Should have raised error")
+    print(f"[ERROR] Should have raised error")
 except ValueError as e:
-    print(f"✓ Correctly caught: {e}")
+    print(f"[OK] Correctly caught: {e}")
 
 
 # =============================================================================
@@ -292,4 +292,4 @@ import shutil
 shutil.rmtree(temp_dir)
 print(f"Cleaned up temp directory: {temp_dir}")
 
-print("\n✅ All Tool demos completed successfully!")
+print("\n[OK] All Tool demos completed successfully!")

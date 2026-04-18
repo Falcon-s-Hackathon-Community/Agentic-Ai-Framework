@@ -283,7 +283,7 @@ def run_tool_workflow_demo(orchestrator: Orchestrator):
     for task_name, task_state in state.task_states.items():
         print(f"  {task_name}: {task_state['status']}")
         if task_state.get("result"):
-            print(f"    Result: {task_state['result'][:100]}...")
+            print(f"    Result: {str(task_state['result'])[:100]}...")
 
 
 def run_persistence_demo(orchestrator: Orchestrator):

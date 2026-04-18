@@ -26,8 +26,10 @@
 |------|-------------|
 | **What is it?** | A Python framework SDK for building AI agents with DAG workflows, tools, memory, and observability |
 | **Why?** | Intel Unnati Problem Statement #2: Build-Your-Own AI Agent Framework |
-| **Key Features** | Flow DAG execution, YAML orchestration, Tool registry with schema validation, Memory store, Structured logging, Intel® OpenVINO™ ML optimization |
+| **Key Features** | Flow DAG execution, YAML orchestration, **Workflow Resume**, Tool registry, Memory store, Intel® OpenVINO™ optimization |
+| **Compatibility** | Fully cross-platform (Linux & **Windows Optimized**) |
 | **Demo Time** | < 30 seconds to run all demos |
+| **New Features** | See [NEW_FEATURES.md](NEW_FEATURES.md) for recent robustness updates |
 | **Lines of Code** | ~4,500 lines of pure Python (no agent framework dependencies) |
 
 ---
@@ -42,7 +44,7 @@
 | **Include memory** | ✅ `MemoryStore` with namespaces, TTL, persistence | `framework/memory.py` |
 | **Guardrails** | ✅ Schema validation, retries, timeouts, error handling | `framework/tools.py`, `task.py` |
 | **Observability (logs, metrics)** | ✅ `FlowLogger`, `MetricsCollector`, `AuditLog` | `framework/logging.py` |
-| **Orchestrator** | ✅ YAML-based `Orchestrator` with state persistence | `framework/orchestrator.PY` |
+| **Orchestrator** | ✅ YAML-based `Orchestrator` with **Stateful Resume** | `framework/orchestrator.PY` |
 | **Apache components** | ✅ Ready for Kafka/Airflow integration (REST API included) | `api/server.py` |
 | **Intel® OpenVINO™ optimization** | ✅ `OpenVINOTextClassifier`, `OpenVINOEmbedding` | `framework/openvino_tools.py` |
 | **Framework SDK with APIs** | ✅ `Agent` class, decorators, builders | `framework/sdk.py` |

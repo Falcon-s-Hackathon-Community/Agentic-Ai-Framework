@@ -431,6 +431,10 @@ class Flow:
                 # Stop on first failure (can be made configurable)
                 break
         
+        # Check if flow was interrupted by failure
+        if len(task_results) < len(execution_order):
+            logger.warning(f"Flow '{self.name}' stopped early due to task failure")
+        
         return task_results, errors
     
     def _execute_parallel(
@@ -442,15 +446,17 @@ class Flow:
         import time as time_module
         task_results = {}
         errors = []
+        failed: Set[str] = set()
         task_start_times = {}
         
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            while len(completed) < len(self._tasks):
-                ready = self._get_ready_tasks(completed)
+            while (len(completed) + len(failed)) < len(self._tasks):
+                ready = [t for t in self._get_ready_tasks(completed) if t not in failed]
                 
                 if not ready:
-                    if len(completed) < len(self._tasks):
-                        errors.append("Deadlock: no tasks ready but flow incomplete")
+                    if (len(completed) + len(failed)) < len(self._tasks):
+                        logger.warning(f"Flow '{self.name}' stalled: {len(self._tasks) - len(completed) - len(failed)} tasks unreachable due to failures")
+                        errors.append(f"Flow stalled: {len(self._tasks) - len(completed) - len(failed)} tasks unreachable due to failures")
                     break
                 
                 # Submit ready tasks
@@ -517,6 +523,7 @@ class Flow:
                                 except Exception as e:
                                     logger.warning(f"Task completion callback failed: {e}")
                         else:
+                            failed.add(task_name)
                             errors.append(f"Task '{task_name}' failed: {result.error}")
                             
                             for callback in self._on_task_fail:

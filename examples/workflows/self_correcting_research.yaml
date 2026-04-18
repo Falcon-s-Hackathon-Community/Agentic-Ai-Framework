@@ -1,0 +1,48 @@
+# Self-Correcting Research Workflow
+# Demonstrates conditional branching, automated quality checks, and refinement loops.
+
+name: self_correcting_research
+description: A research agent that checks its own work quality and refines if necessary.
+
+tasks:
+  # Step 1: Initial research on the topic
+  initial_research:
+    type: function
+    config:
+      function: initial_research
+    retry:
+      max_retries: 2
+      retry_delay: 1.0
+
+  # Step 2: Quality check of the research
+  check_quality:
+    type: conditional
+    depends_on: [initial_research]
+    config:
+      condition: evaluate_research_quality
+      true_task: generate_final_report
+      false_task: refine_research
+
+  # Step 3: Refine research (only if quality is LOW)
+  refine_research:
+    type: function
+    depends_on: [check_quality]
+    config:
+      function: refine_research
+    retry:
+      max_retries: 3
+
+  # Step 4: Final report generation (only if quality is HIGH)
+  generate_final_report:
+    type: function
+    depends_on: [check_quality]
+    config:
+      function: generate_final_report
+
+  # Step 5: Wrap up (depends on either refinement finishing OR high quality direct path)
+  # NOTE: To handle "OR", we can use a collector function that depends on both but handles skipped ones.
+  finish_workflow:
+    type: function
+    depends_on: [refine_research, generate_final_report]
+    config:
+      function: finish_workflow

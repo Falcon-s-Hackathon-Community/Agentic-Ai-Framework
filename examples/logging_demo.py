@@ -183,7 +183,7 @@ print(f"Aggregated log file: {logger._all_flows_log}")
 
 # Check if log files exist
 if logger._all_flows_log.exists():
-    print(f"\n✓ Log file exists")
+    print(f"\n[OK] Log file exists")
     
     # Count log entries
     with open(logger._all_flows_log, "r") as f:
@@ -232,12 +232,12 @@ divider("Summary")
 print("""
 Structured Logging Features Demonstrated:
 
-✅ FLOW_START  - Logged when flow execution begins
-✅ FLOW_END    - Logged when flow execution completes/fails  
-✅ TASK_START  - Logged when each task begins
-✅ TASK_END    - Logged when each task completes/fails
-✅ TASK_RETRY  - Logged when task retries after failure
-✅ ERROR       - Logged when errors occur
+[OK] FLOW_START  - Logged when flow execution begins
+[OK] FLOW_END    - Logged when flow execution completes/fails  
+[OK] TASK_START  - Logged when each task begins
+[OK] TASK_END    - Logged when each task completes/fails
+[OK] TASK_RETRY  - Logged when task retries after failure
+[OK] ERROR       - Logged when errors occur
 
 Log Storage:
   - logs/flows/all_flows.jsonl     (all flow logs)
@@ -246,4 +246,4 @@ Log Storage:
 Log Format: JSON Lines (JSONL) - one JSON object per line
 """)
 
-print("✅ All logging demos completed!")
+print("[OK] All logging demos completed!")
