@@ -587,25 +587,33 @@ class Orchestrator:
     ) -> WorkflowState:
         """Execute tasks in parallel where dependencies allow."""
         completed: Set[str] = set()
+        failed: Set[str] = set()
         # Track actual results (not stringified versions)
         actual_results: Dict[str, Any] = {}
         
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            while len(completed) < len(tasks):
-                # Find tasks ready to execute
+            while len(completed) + len(failed) < len(tasks):
+                # Find tasks ready to execute (skip already failed/skipped tasks)
                 ready = [
                     name for name, task in tasks.items()
                     if name not in completed
+                    and name not in failed
                     and task.status == TaskStatus.PENDING
                     and all(dep in completed for dep in task.dependencies)
                 ]
                 
                 if not ready:
-                    if len(completed) < len(tasks):
-                        # Check for failures blocking progress
-                        pending = [n for n in tasks if n not in completed]
-                        if pending:
-                            state.errors.append(f"Deadlock: tasks {pending} cannot proceed")
+                    # Only flag a deadlock if there are tasks that are truly
+                    # pending (not failed/skipped) and cannot proceed
+                    truly_pending = [
+                        n for n in tasks
+                        if n not in completed and n not in failed
+                    ]
+                    if truly_pending:
+                        state.errors.append(
+                            f"Deadlock detected: tasks {truly_pending} cannot proceed. "
+                            f"Check for circular dependencies."
+                        )
                     break
                 
                 # Submit ready tasks
@@ -652,6 +660,26 @@ class Orchestrator:
                             )
                             state.errors.append(f"Task '{task_name}' failed: {result.error}")
                             logger.error(f"Task '{task_name}' failed: {result.error}")
+                            
+                            # Propagate skip to all downstream dependents
+                            failed.add(task_name)
+                            skip_queue = list(tasks[task_name].dependents)
+                            while skip_queue:
+                                skip_name = skip_queue.pop(0)
+                                if skip_name not in failed:
+                                    failed.add(skip_name)
+                                    self.state_store.update_task_state(
+                                        state.workflow_id, skip_name, "skipped",
+                                        error=f"Skipped because dependency '{task_name}' failed"
+                                    )
+                                    state.errors.append(
+                                        f"Task '{skip_name}' skipped: dependency '{task_name}' failed"
+                                    )
+                                    logger.warning(
+                                        f"Task '{skip_name}' skipped due to failed dependency '{task_name}'"
+                                    )
+                                    if skip_name in tasks:
+                                        skip_queue.extend(tasks[skip_name].dependents)
                     
                     except Exception as e:
                         self.state_store.update_task_state(
@@ -659,6 +687,26 @@ class Orchestrator:
                             error=str(e)
                         )
                         state.errors.append(f"Task '{task_name}' exception: {e}")
+                        
+                        # Propagate skip to all downstream dependents
+                        failed.add(task_name)
+                        skip_queue = list(tasks[task_name].dependents)
+                        while skip_queue:
+                            skip_name = skip_queue.pop(0)
+                            if skip_name not in failed:
+                                failed.add(skip_name)
+                                self.state_store.update_task_state(
+                                    state.workflow_id, skip_name, "skipped",
+                                    error=f"Skipped because dependency '{task_name}' failed"
+                                )
+                                state.errors.append(
+                                    f"Task '{skip_name}' skipped: dependency '{task_name}' failed"
+                                )
+                                logger.warning(
+                                    f"Task '{skip_name}' skipped due to failed dependency '{task_name}'"
+                                )
+                                if skip_name in tasks:
+                                    skip_queue.extend(tasks[skip_name].dependents)
                 
                 # Refresh state
                 state = self.state_store.get_workflow_state(state.workflow_id) or state
