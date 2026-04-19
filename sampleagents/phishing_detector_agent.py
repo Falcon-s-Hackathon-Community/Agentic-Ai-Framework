@@ -780,13 +780,13 @@ def run_demo(
         print(f"\n  ℹ️   No API key found — running in SIMULATED mode (demo still works!)")
         print(f"       To use live LLM: set GOOGLE_API_KEY or OPEN_ROUTER_API env var\n")
 
-    agent = create_phishing_detector_agent(
-        gemini_api_key=gemini_key,
-        openrouter_api_key=openrouter_key,
-    )
-
     for i, email_data in enumerate(emails, 1):
         print(f"\n  ── Analyzing email {i}/{len(emails)} ──")
+        # Fresh agent per email — avoids DAG state deadlock on re-runs
+        agent = create_phishing_detector_agent(
+            gemini_api_key=gemini_key,
+            openrouter_api_key=openrouter_key,
+        )
 
         result = agent.run_flow(
             "phishing_detection_workflow",
