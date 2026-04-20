@@ -80,6 +80,14 @@ from .orchestrator import (
     FlowParser,
     create_orchestrator
 )
+from .rate_limiter import (
+    RateLimiter,
+    RateLimitConfig,
+    RateLimitPresets,
+    get_global_rate_limiter,
+    set_global_rate_limiter,
+    disable_global_rate_limiter
+)
 
 # Optional OpenVINO tools (only if dependencies available)
 try:
@@ -392,4 +400,12 @@ __all__ = [
     # Utility functions
     "quick_flow",
     "run_task",
+    
+    # Rate limiting
+    "RateLimiter",
+    "RateLimitConfig",
+    "RateLimitPresets",
+    "get_global_rate_limiter",
+    "set_global_rate_limiter",
+    "disable_global_rate_limiter",
 ]
