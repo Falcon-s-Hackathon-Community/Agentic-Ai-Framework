@@ -274,27 +274,46 @@ class FunctionTask(Task):
 
 
 class LLMTask(Task):
-    """Task for LLM-based processing."""
-    
+    """Task for LLM-based processing with optional rate limiting."""
+
     def __init__(
         self,
         name: str,
         prompt_template: str,
         llm_handler: Optional[Callable] = None,
+        rate_limiter=None,   # accepts a RateLimiter instance
         **kwargs
     ):
         super().__init__(name, task_type="llm", **kwargs)
         self.prompt_template = prompt_template
         self.llm_handler = llm_handler
-    
+        self.rate_limiter = rate_limiter  # per-task rate limiter (optional)
+
     def _run(self, context: Dict[str, Any]) -> Any:
+        # Import here to avoid circular imports
+        from .rate_limiter import get_global_rate_limiter
+
+        # Determine which rate limiter to use
+        # Per-task limiter takes priority over global limiter
+        active_limiter = self.rate_limiter or get_global_rate_limiter()
+
+        # Acquire rate limit slot before making the LLM call
+        if active_limiter:
+            active_limiter.acquire(task_name=self.name)
+
         # Format the prompt with context
-        prompt = self.prompt_template.format(**context)
-        
+        try:
+            prompt = self.prompt_template.format(**context)
+        except KeyError as e:
+            raise ValueError(
+                f"Prompt template requires key {e} "
+                f"but it's not in context. Available: {list(context.keys())}"
+            ) from e
+
         if self.llm_handler:
             return self.llm_handler(prompt)
-        
-        # If no handler, return the formatted prompt (for external processing)
+
+        # If no handler, return the formatted prompt for external processing
         return {"prompt": prompt, "requires_llm": True}
 
 

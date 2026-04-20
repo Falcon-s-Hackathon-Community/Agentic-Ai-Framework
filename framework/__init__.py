@@ -98,6 +98,14 @@ from .sdk import (
     # Utility functions
     quick_flow,
     run_task,
+    
+    # Rate limiting
+    RateLimiter,
+    RateLimitConfig,
+    RateLimitPresets,
+    get_global_rate_limiter,
+    set_global_rate_limiter,
+    disable_global_rate_limiter,
 )
 
 __version__ = "0.1.0"
@@ -177,4 +185,12 @@ __all__ = [
     # Utility functions
     "quick_flow",
     "run_task",
+    
+    # Rate limiting
+    "RateLimiter",
+    "RateLimitConfig",
+    "RateLimitPresets",
+    "get_global_rate_limiter",
+    "set_global_rate_limiter",
+    "disable_global_rate_limiter",
 ]
