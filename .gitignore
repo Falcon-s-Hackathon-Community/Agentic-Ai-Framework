@@ -16,3 +16,5 @@ output/
 *.swp
 coverage
 sampleagents/traffic_config.json
+examples/benchmark_results/
+examples/workflow_states.json
