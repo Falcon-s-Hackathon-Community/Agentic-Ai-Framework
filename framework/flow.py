@@ -369,7 +369,8 @@ class Flow:
         
         for task_name in execution_order:
             task = self._tasks[task_name]
-            
+            task._flow_logger = self.flow_log
+
             # Log task start
             self.flow_log.task_start(
                 task_name=task_name,
@@ -464,7 +465,12 @@ class Flow:
                 for task_name in ready:
                     task = self._tasks[task_name]
                     task.status = TaskStatus.RUNNING
-                    
+                    # Bind this flow's logger to the task before submission so
+                    # that retry log calls inside worker threads always reach the
+                    # correct FlowLogger even when other flows are executing
+                    # concurrently and overwriting the process-global.
+                    task._flow_logger = self.flow_log
+
                     # Log task start
                     self.flow_log.task_start(
                         task_name=task_name,
