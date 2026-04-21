@@ -17,16 +17,19 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Global flow logger reference (set by Flow during execution)
+# Process-global fallback logger (single-flow / legacy usage only).
+# Concurrent flows must bind a logger per-task via task._flow_logger instead
+# of relying on this global, which is overwritten by the last Flow.execute()
+# call and therefore unsafe under concurrent execution.
 _flow_logger: Optional["FlowLogger"] = None
 
 def set_task_flow_logger(flow_logger: "FlowLogger") -> None:
-    """Set the flow logger for task-level logging."""
+    """Set the process-global flow logger (single-flow use only)."""
     global _flow_logger
     _flow_logger = flow_logger
 
 def get_task_flow_logger() -> Optional["FlowLogger"]:
-    """Get the current flow logger."""
+    """Get the process-global flow logger."""
     return _flow_logger
 
 
@@ -178,8 +181,9 @@ class Task:
                     self.status = TaskStatus.RETRYING
                     delay = self.retry_delay * (2 ** (retries - 1))  # Exponential backoff
                     
-                    # Log retry with FlowLogger if available
-                    flow_log = get_task_flow_logger()
+                    # Per-task logger (set by Flow at submit time) takes priority
+                    # over the process-global to avoid cross-flow log corruption.
+                    flow_log = getattr(self, '_flow_logger', None) or get_task_flow_logger()
                     if flow_log:
                         flow_log.task_retry(
                             task_name=self.name,
