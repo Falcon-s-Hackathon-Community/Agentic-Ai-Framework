@@ -54,7 +54,7 @@ class WorkflowState:
             "started_at": self.started_at.isoformat() if self.started_at else None,
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "task_states": self.task_states,
-            "context": self.context,
+            "context": {k: (v if isinstance(v, (int, float, str, bool, type(None), list, dict)) else str(v)) for k, v in self.context.items()},
             "errors": self.errors
         }
     
@@ -229,6 +229,8 @@ class FlowParser:
             raise ValueError(f"Invalid YAML: {e}")
         
         # Validate required fields
+        if not isinstance(data, dict):
+            raise ValueError("YAML root must be a dictionary")
         if "name" not in data:
             raise ValueError("Flow must have a 'name' field")
         if "tasks" not in data or not data["tasks"]:
