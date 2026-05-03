@@ -212,8 +212,8 @@ class OpenVINOTextClassifier:
             _ = self.classify(text)
         
         # Benchmark
-        if not test_texts:
-            logger.warning("No test texts provided for benchmark")
+        if not test_texts or num_iterations <= 0:
+            logger.warning("No test texts or zero iterations provided for benchmark")
             return BenchmarkResult(
                 model_name=self.model_name,
                 backend="openvino" if self.use_openvino else "pytorch",
@@ -400,8 +400,8 @@ class OpenVINOEmbedding:
             _ = self.embed(text)
         
         # Benchmark
-        if not test_texts:
-            logger.warning("No test texts provided for benchmark")
+        if not test_texts or num_iterations <= 0:
+            logger.warning("No test texts or zero iterations provided for benchmark")
             return BenchmarkResult(
                 model_name=self.model_name,
                 backend="openvino" if self.use_openvino else "pytorch",
