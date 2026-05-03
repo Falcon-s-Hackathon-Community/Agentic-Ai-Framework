@@ -775,13 +775,14 @@ class FlowLogger:
         if not self._all_flows_log.exists():
             return []
         
-        logs = []
+        import collections
+        logs = collections.deque(maxlen=limit)
         with open(self._all_flows_log, "r", encoding="utf-8") as f:
             for line in f:
                 if line.strip():
                     logs.append(json.loads(line))
         
-        return logs[-limit:]
+        return list(logs)
     
     def get_error_summary(self) -> Dict[str, Any]:
         """Get summary of recent errors."""
