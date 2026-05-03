@@ -8,10 +8,14 @@ import uuid
 app = FastAPI(title="IntelAgentCore Gateway")
 
 # Kafka Producer setup
-producer = KafkaProducer(
-    bootstrap_servers='localhost:9092',
-    value_serializer=lambda v: json.dumps(v).encode('utf-8')
-)
+try:
+    producer = KafkaProducer(
+        bootstrap_servers='localhost:9092',
+        value_serializer=lambda v: json.dumps(v).encode('utf-8')
+    )
+except Exception as e:
+    print(f"Warning: Kafka Producer failed to initialize: {e}")
+    producer = None
 
 
 class WorkflowRequest(BaseModel):
