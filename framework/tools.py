@@ -496,6 +496,8 @@ class FileWriteTool(Tool):
         
         # Write file
         file_mode = "a" if mode == "append" else "w"
+        if mode == "append" and not content_str.endswith("\n"):
+            content_str += "\n"
         with open(path, file_mode, encoding=encoding) as f:
             bytes_written = f.write(content_str)
         
@@ -717,11 +719,17 @@ class HTTPTool(Tool):
                     "body": response_body,
                     "headers": response_headers
                 }
-        except urllib.error.HTTPError as e:
+        except urllib.error.URLError as e:
+            if hasattr(e, 'read'):
+                return {
+                    "status_code": getattr(e, 'code', 500),
+                    "body": e.read().decode("utf-8", errors="replace"),
+                    "headers": dict(getattr(e, 'headers', {}))
+                }
             return {
-                "status_code": e.code,
-                "body": e.read().decode("utf-8"),
-                "headers": dict(e.headers)
+                "status_code": 500,
+                "body": str(getattr(e, 'reason', e)),
+                "headers": {}
             }
 
 

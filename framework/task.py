@@ -98,6 +98,8 @@ class Task:
     
     def add_dependency(self, task_name: str) -> "Task":
         """Add a task dependency (this task will wait for the dependency)."""
+        if task_name == self.name:
+            raise ValueError(f"Task '{self.name}' cannot depend on itself")
         if task_name not in self.dependencies:
             self.dependencies.append(task_name)
         return self
