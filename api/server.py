@@ -1,17 +1,34 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from kafka import KafkaProducer
 from framework.sdk import Agent, ToolTask, LLMTask
 import json
 import uuid
+import logging
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="IntelAgentCore Gateway")
 
-# Kafka Producer setup
-producer = KafkaProducer(
-    bootstrap_servers='localhost:9092',
-    value_serializer=lambda v: json.dumps(v).encode('utf-8')
-)
+# Kafka Producer setup - Lazy initialization
+_producer = None
+
+def get_kafka_producer():
+    """Lazy initialize Kafka producer to avoid startup crashes."""
+    global _producer
+    if _producer is None:
+        try:
+            from kafka import KafkaProducer
+            _producer = KafkaProducer(
+                bootstrap_servers='localhost:9092',
+                value_serializer=lambda v: json.dumps(v).encode('utf-8'),
+                request_timeout_ms=1000
+            )
+        except (ImportError, Exception) as e:
+            logger.warning(f"Kafka support disabled: {e}. Running without Kafka logging.")
+            return None
+    return _producer
 
 
 class WorkflowRequest(BaseModel):
