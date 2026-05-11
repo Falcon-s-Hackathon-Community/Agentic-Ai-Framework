@@ -205,13 +205,7 @@ class OpenVINOTextClassifier:
         if not self._is_loaded:
             self.load()
         
-        # Warmup
-        logger.info(f"Running {warmup_iterations} warmup iterations...")
-        for i in range(warmup_iterations):
-            text = test_texts[i % len(test_texts)]
-            _ = self.classify(text)
-        
-        # Benchmark
+        # Benchmark guard
         if not test_texts:
             logger.warning("No test texts provided for benchmark")
             return BenchmarkResult(
@@ -227,6 +221,14 @@ class OpenVINOTextClassifier:
                 p99_latency_ms=0,
                 throughput_per_sec=0
             )
+
+        # Warmup
+        logger.info(f"Running {warmup_iterations} warmup iterations...")
+        for i in range(warmup_iterations):
+            text = test_texts[i % len(test_texts)]
+            _ = self.classify(text)
+        
+        # Benchmark
 
         logger.info(f"Running {num_iterations} benchmark iterations...")
         latencies = []
@@ -394,12 +396,7 @@ class OpenVINOEmbedding:
         if not self._is_loaded:
             self.load()
         
-        # Warmup
-        for i in range(warmup_iterations):
-            text = test_texts[i % len(test_texts)]
-            _ = self.embed(text)
-        
-        # Benchmark
+        # Benchmark guard
         if not test_texts:
             logger.warning("No test texts provided for benchmark")
             return BenchmarkResult(
@@ -415,6 +412,13 @@ class OpenVINOEmbedding:
                 p99_latency_ms=0,
                 throughput_per_sec=0
             )
+
+        # Warmup
+        for i in range(warmup_iterations):
+            text = test_texts[i % len(test_texts)]
+            _ = self.embed(text)
+        
+        # Benchmark
 
         latencies = []
         
