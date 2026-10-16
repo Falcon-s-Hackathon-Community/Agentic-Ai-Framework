@@ -1,0 +1,1 @@
+My name is Rohan Kotsulwar, and I am a Computer Engineering student. I am passionate about technology, innovation, and problem-solving. I enjoy organizing college events, participating in hackathons, and working on projects that help me improve my technical and leadership skills. I believe in continuous learning, teamwork, and turning creative ideas into reality.
