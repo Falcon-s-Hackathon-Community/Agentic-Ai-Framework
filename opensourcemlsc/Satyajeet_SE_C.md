@@ -1,0 +1,2 @@
+Hello everyone, my name is Satyajeet Abhiman Nanaware, and I am from SE Computer Engineering(CE), Division C at NMIET. I have a keen interest in Blockchain Technology, Cybersecurity, Artificial Intelligence, and emerging technologies. I enjoy exploring new concepts, learning programming, and understanding how technology can be used to solve real-world problems. I am always eager to learn new skills, work on innovative projects, and expand my knowledge in the field of Computer Engineering.
+
