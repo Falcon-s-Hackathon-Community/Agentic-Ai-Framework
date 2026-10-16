@@ -1,0 +1,1 @@
+My name is Yash Khot, and I am a second-year Computer Science and Engineering (CSE) student from Division C. My goal is to become a skilled software developer. I am interested in programming, learning new technologies, and improving my problem-solving skills. I look forward to gaining knowledge, developing my skills, and working on exciting projects.
