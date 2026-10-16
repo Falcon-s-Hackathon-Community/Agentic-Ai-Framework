@@ -1,0 +1,1 @@
+Hello, my name is Bhavika Patil. I am a second-year Computer Engineering student at NMIET. I have basic knowledge of HTML, CSS, JavaScript, and Git/GitHub. I am an GSSOC 2026 contributor and a member of the ACM Technical Team. I am interested in web development, open-source contributions, and learning new technologies.
