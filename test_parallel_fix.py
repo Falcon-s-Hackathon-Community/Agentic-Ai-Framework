@@ -1,9 +1,13 @@
 import sys
-sys.path.insert(0, '.')
+from pathlib import Path
+
+# Add current directory to path safely
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from framework.orchestrator import create_orchestrator
 
-YAML = """
+# Multi-line string cleaned up
+YAML_CONFIG = """
 name: test_failure_propagation
 tasks:
   task_a:
@@ -29,29 +33,52 @@ tasks:
       function: independent_task
 """
 
-orc = create_orchestrator()
-orc.register_function("always_fail",            lambda ctx: (_ for _ in ()).throw(RuntimeError("intentional failure")))
-orc.register_function("should_be_skipped",      lambda ctx: "this should never run")
-orc.register_function("should_also_be_skipped", lambda ctx: "this should never run either")
-orc.register_function("independent_task",       lambda ctx: "independent ran fine")
 
-# Use parse_yaml directly to avoid the path-detection heuristic in load_flow
-flow_def = orc.parser.parse_yaml(YAML)
-state = orc.execute(flow_def, parallel=True)
+def raise_failure(ctx):
+    """Explicitly raises a runtime error to test failure propagation."""
+    raise RuntimeError("intentional failure")
 
-print("\n=== Results ===")
-for task_name, task_state in state.task_states.items():
-    print(f"  {task_name}: {task_state['status']}")
 
-print(f"\nWorkflow status: {state.status.value}")
-print(f"Errors recorded: {len(state.errors)}")
-for err in state.errors:
-    print(f"  - {err}")
+def main():
+    # Initialize and configure orchestrator
+    orc = create_orchestrator()
+    
+    # Register functions cleanly using proper callables
+    orc.register_function("always_fail", raise_failure)
+    orc.register_function("should_be_skipped", lambda ctx: "skipped")
+    orc.register_function("should_also_be_skipped", lambda ctx: "skipped")
+    orc.register_function("independent_task", lambda ctx: "success")
 
-assert state.task_states["task_a"]["status"] == "failed",    "task_a should be failed"
-assert state.task_states["task_b"]["status"] == "skipped",   "task_b should be skipped"
-assert state.task_states["task_c"]["status"] == "skipped",   "task_c should be skipped"
-assert state.task_states["task_d"]["status"] == "completed", "task_d (independent) should complete"
-assert "Deadlock" not in str(state.errors),                  "No false deadlock error should appear"
+    # Parse and execute flow
+    flow_def = orc.parser.parse_yaml(YAML_CONFIG)
+    state = orc.execute(flow_def, parallel=True)
 
-print("\nAll assertions passed. Bug is fixed.")
+    # Print results summary
+    print("\n=== Task Results ===")
+    for name, task in state.task_states.items():
+        print(f"  {name}: {task['status']}")
+
+    print(f"\nWorkflow overall status: {state.status.value}")
+    print(f"Errors recorded: {len(state.errors)}")
+    for error in state.errors:
+        print(f"  - {error}")
+
+    # Validate state outcomes
+    expected_statuses = {
+        "task_a": "failed",
+        "task_b": "skipped",
+        "task_c": "skipped",
+        "task_d": "completed",
+    }
+
+    for task_name, expected in expected_statuses.items():
+        actual = state.task_states[task_name]["status"]
+        assert actual == expected, f"{task_name} status was {actual}, expected {expected}"
+
+    assert "Deadlock" not in str(state.errors), "False deadlock detected in error logs"
+
+    print("\nAll assertions passed successfully.")
+
+
+if __name__ == "__main__":
+    main()
